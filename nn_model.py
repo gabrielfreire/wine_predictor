@@ -50,7 +50,7 @@ def engineer_data():
     features = scaler.fit_transform(features)
     labels = scaler.fit_transform(labels)
 
-    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.6, random_state=56)
+    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2)
 
     return X_train, X_test, y_train, y_test
 

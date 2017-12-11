@@ -2,7 +2,6 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.cross_validation import train_test_split
 
@@ -37,9 +36,9 @@ def engineer_data():
     df_copy_newcats = df_copy[df_copy['category'].isin(['Bad','Good'])].copy()
     df_copy_newcats['category'] = pd.cut(df_copy_newcats['quality'], bins, labels=[0.0, 1.0])
 
-    cols = ['volatile acidity', 'citric acid', 'chlorides', 'residual sugar', 'free sulfur dioxide', 'sulphates', 'total sulfur dioxide', 'density',
+    all_cols = ['volatile acidity', 'citric acid', 'chlorides', 'residual sugar', 'free sulfur dioxide', 'sulphates', 'total sulfur dioxide', 'density',
        'pH', 'alcohol']
-    # feature columns
+    # feature columns chosen by data analisys on jupyter notebook
     feature_cols = ['volatile acidity','citric acid','total sulfur dioxide','sulphates','alcohol', 'density']
     features = df_copy_newcats[feature_cols].values
     # label (quality)
@@ -57,19 +56,24 @@ def engineer_data():
 # ENGINEER THE DATA
 X_train, X_test, y_train, y_test = engineer_data()
 
+
+learning_rate = 0.0001
+steps = 100000
+    
+# input and output placeholders
+with tf.variable_scope('input'):
+    X = tf.placeholder(dtype=tf.float32)
+with tf.variable_scope('output'):
+    y = tf.placeholder(dtype=tf.float32)
+
 # BUILD THE MODEL
 def build_model():
     # hyperparameters
-    learning_rate = 0.0001
-    steps = 100000
     n_input = 6
     n_hidden = 80
     n_hidden2 = 80
     n_output = 1
-    
-    # input and output placeholders
-    with tf.variable_scope('input'):
-        X = tf.placeholder(dtype=tf.float32)
+
     
     # Weight and activation Operations
     with tf.variable_scope('input_layer'):
@@ -91,26 +95,25 @@ def build_model():
         output_layer = tf.add(tf.matmul(hidden_layer, W3), b3)
         output_layer = tf.nn.sigmoid(output_layer)
         # output_layer = tf.nn.softmax(output_layer)
-    
-    with tf.variable_scope('cost'):
-        y = tf.placeholder(dtype=tf.float32)
-        cost = tf.reduce_mean(tf.squared_difference(output_layer, y))
-        # cost = tf.nn.l2_loss(output_layer - y)
-    
-    # Add an optimizer and create a training operation
-    with tf.variable_scope('train'):
-        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
-        train = optimizer.minimize(cost)
 
-    
+
     saver = tf.train.Saver()
 
-    return saver, cost, optimizer, train, output_layer, steps, X, y
+    return saver, output_layer, steps
 
 # TRAIN THE MODEL
 def train_model():
     display_rate = 1000
-    saver, cost, optimizer, train, pred, steps, X, y = build_model()
+    saver, pred, steps = build_model()
+    # Add an optimizer and create a training operation
+        
+    with tf.variable_scope('cost'):
+        cost = tf.reduce_mean(tf.squared_difference(pred, y))
+        # cost = tf.nn.l2_loss(output_layer - y)
+
+    with tf.variable_scope('train'):
+        optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
+        train = optimizer.minimize(cost)
 
     # calculate the error
     correct = tf.equal(tf.floor(pred+0.5), y)
@@ -146,7 +149,7 @@ def train_model():
         return prediction, acc
 
 def test_model():
-    saver, cost, optimizer, train, pred, steps, X, y = build_model()
+    saver, pred, steps = build_model()
     # calculate the error
     correct = tf.equal(tf.floor(pred+0.5), y)
 

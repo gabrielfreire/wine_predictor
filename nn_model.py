@@ -99,12 +99,12 @@ def build_model():
 
     saver = tf.train.Saver()
 
-    return saver, output_layer, steps
+    return saver, output_layer
 
 # TRAIN THE MODEL
 def train_model():
     display_rate = 1000
-    saver, pred, steps = build_model()
+    saver, pred = build_model()
     # Add an optimizer and create a training operation
         
     with tf.variable_scope('cost'):
@@ -149,7 +149,7 @@ def train_model():
         return prediction, acc
 
 def test_model():
-    saver, pred, steps = build_model()
+    saver, pred = build_model()
     # calculate the error
     correct = tf.equal(tf.floor(pred+0.5), y)
 
